@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import argparse
+from timeit import default_timer as timer
+import random
+
 import gevent#apt-get install gevent
 from gevent.queue import *
 import gevent.monkey
-from timeit import default_timer as timer
-import random
-gevent.monkey.patch_all()
 from tqdm import * #pip install tqdm
 import requests #pip install requests
 import cookielib
@@ -15,12 +15,12 @@ UL.NET CHECKER - by sup3ria
 '''
 print asci
 
-parser = argparse.ArgumentParser(description='uploaded.net checker 2016')
-parser.add_argument('-t','--threads', help='Threads', required=False,type=int,default="1")
-parser.add_argument('-i','--input', help='input.txt', required=False,type=str,default="accounts.txt")
+parser = argparse.ArgumentParser(description='uploaded.net checker 2017')
+parser.add_argument('-t','--threads', help='Threads', required=False,type=int,default="5")
+parser.add_argument('-i','--input', help='input.txt', required=False,type=str,default="input.txt")
 parser.add_argument('-o','--output', help='output.txt', required=False,type=str,default="ul_valid.txt")
 parser.add_argument('-s','--sleep', help='Sleeping in between?', required=False,type=bool,default=True)
-parser.add_argument('-v','--valids', help='print valid accounts', required=False,type=bool,default=False)
+parser.add_argument('-v','--valids', help='print valid accounts', required=False,type=bool,default=True)
 
 args = vars(parser.parse_args())
 workers = args['threads']
@@ -88,11 +88,10 @@ def worker():
                         f.write(line+'\n')
                 except:
                     pass
-                    #gevent.sleep(random.uniform(1.201,2.905))
-                    #q.put(task, timeout=3)
         finally:
             pbar.update()
-            gevent.sleep(random.uniform(0.201,0.905))
+            if sleeper:
+				gevent.sleep(random.uniform(0.201,0.0983))
 
 def loader():
     with open(file_in, "r") as text_file:
@@ -118,6 +117,7 @@ def asynchronous():
             print i
     print "\n\nTime passed: " + str(end - start)[:6]
 
+gevent.monkey.patch_all()
 v = []
 q = gevent.queue.JoinableQueue()
 gevent.spawn(loader).join()
