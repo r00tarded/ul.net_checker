@@ -3,7 +3,7 @@ UL.NET CHECKER - by sup3ria
 
 This script loads http proxies by it self, checks and then uses them to check for valid logins at uploaded.net.
 Thread count is = proxies loaded.
-After 5 interation for each proxie the script sleeps about 10 sec and then continues.
+After 5 interation for each proxy the script sleeps about 10 sec and then continues.
 
 usage: g.py [-h] [-i INPUT] [-o OUTPUT]
 
