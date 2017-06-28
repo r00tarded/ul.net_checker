@@ -1,20 +1,18 @@
 # ul.net_checker
 UL.NET CHECKER - by sup3ria
 
-usage: g.py [-h] [-t THREADS] [-i INPUT] [-o OUTPUT] [-s SLEEP] [-v VALIDS]
+This script loads http proxies by it self, checks and then uses them to check for valid logins at uploaded.net.
+Thread count is = proxies loaded.
+After 5 interation for each proxie the script sleeps about 10 sec and then continues.
 
-uploaded.net checker 2016
+usage: g.py [-h] [-i INPUT] [-o OUTPUT]
+
+uploaded.net checker 2017
 
 optional arguments:
   -h, --help            show this help message and exit
-  -t THREADS, --threads THREADS
-                        Threads
   -i INPUT, --input INPUT
                         input.txt
   -o OUTPUT, --output OUTPUT
                         output.txt
-  -s SLEEP, --sleep SLEEP
-                        Sleeping in between?
-  -v VALIDS, --valids VALIDS
-                        print valid accounts
 
