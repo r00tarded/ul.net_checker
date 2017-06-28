@@ -5,7 +5,7 @@ This script loads http proxies by it self, checks and then uses them to check fo
 Thread count is = proxies loaded.
 After 5 interation for each proxy the script sleeps about 10 sec and then continues.
 
-usage: g.py [-h] [-i INPUT] [-o OUTPUT]
+usage: ulc.py [-h] [-i INPUT] [-o OUTPUT]
 
 uploaded.net checker 2017
 
