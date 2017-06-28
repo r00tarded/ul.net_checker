@@ -2,6 +2,7 @@
 import argparse
 from timeit import default_timer as timer
 import random
+from random import shuffle
 
 import gevent#apt-get install gevent or pip install gevent
 from gevent.queue import *
@@ -35,7 +36,6 @@ u'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/
 u'Mozilla/5.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0; GTB7.4; InfoPath.2; SV1; .NET CLR 3.3.69573; WOW64; en-US)',
 u'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36']
 
-
 def parse(html):
     try:
         soup = BeautifulSoup(str(html), "lxml")
@@ -56,7 +56,6 @@ def sub_worker(task, ip_port):
         jar = cookielib.CookieJar()
         usr= task.split(':')[0]
         pwd = task.split(':')[1]
-        
         prx = "http://"+ip_port
         proxies = {'http': prx}
         s = requests.Session()
@@ -83,7 +82,7 @@ def get_proxies():
         soup = BeautifulSoup(str(e), "lxml")
         td = soup.findAll("td")
         proxies.append([s.text.strip() for s in td])
-    return [(e[0]+":"+e[1]) for e in proxies]
+    return list(set([(e[0]+":"+e[1]) for e in proxies]))
 
 def prox_check(ip_port):
 	try:
@@ -91,12 +90,10 @@ def prox_check(ip_port):
 		proxies = {'http': prx}
 		s = requests.Session()
 		s.proxies.update(proxies)
-		r = s.get("http://api.ipify.org/?format=text", timeout=3)
-		if r.text in prx:
-			r = s.get("http://www.lagado.com/proxy-test", timeout=3)
-			c = r.text.split('<b>Remote &nbsp; IP Address</b>')[1][:14].strip()
-			if ip_port[:9] in c:
-				return True
+		r = s.get("http://www.proxy-listen.de/azenv.php", timeout=3)
+		c = r.text.split('REMOTE_ADDR =')[1].split('REMOTE_PORT')[0].strip()
+		if ip_port[:9] in c:
+			return True
 		return False
 	except:
 		return False
@@ -149,7 +146,7 @@ def asynchronous_prox():
     [q_prox.put(e) for e in p]
     threads = []
     print "Checking",len(p),"proxies."
-    for i in xrange(101):
+    for i in xrange(51):
         threads.append(gevent.spawn(prox_worker))
     gevent.joinall(threads,raise_error=True)
     print "Found", len(v_prox), "valid proxies."
