@@ -2,7 +2,6 @@
 import argparse
 from timeit import default_timer as timer
 import random
-from random import shuffle
 
 import gevent#apt-get install gevent or pip install gevent
 from gevent.queue import *
